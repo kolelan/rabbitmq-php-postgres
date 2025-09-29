@@ -1,0 +1,21 @@
+project/
+├── docker-compose.yml
+├── .env
+├── api/                    # REST API сервис (опционально)
+│   ├── Dockerfile
+│   ├── composer.json
+│   └── src/
+├── worker/                 # PHP воркер для обработки очереди
+│   ├── Dockerfile
+│   ├── composer.json
+│   ├── worker.php
+│   └── src/
+├── console/               # PHP консольное приложение
+│   ├── Dockerfile
+│   ├── composer.json
+│   ├── console.php
+│   └── src/
+├── shared/               # Общие PHP классы
+│   └── src/
+└── database/
+    └── init.sql

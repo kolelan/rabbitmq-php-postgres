@@ -1,0 +1,11 @@
+# Логи от php-worker
+{job="php-worker"}
+
+# Ошибки от всех PHP приложений
+{job=~"php-.*"} |= "error"
+
+# Поиск по конкретному пользователю
+{job="php-worker"} |= "john"
+
+# Логи за последний час с уровнем INFO
+{job="php-worker"} | json | level="info"

@@ -1,0 +1,54 @@
+#GET http://localhost:5050
+
+# curl -X POST http://localhost:8080/users
+#  -H "Content-Type: application/json"
+#  -d '{"name": "John Doe"}'
+POST http://localhost:8080/users
+Content-Type: application/json
+
+{
+  "name": "John Doe"
+}
+
+###
+
+POST http://localhost:8080/users
+Content-Type: application/json
+
+{
+  "status": "accepted",
+  "message_id": 123,
+  "message": "User creation request has been queued"
+}
+###
+
+POST http://localhost:8080/users
+Content-Type: application/json
+
+{
+  "status": "accepted",
+  "message_id": 123,
+  "message": "User creation request has been queued"
+}
+###
+
+POST http://localhost:8080/users
+Content-Type: application/json
+
+{
+  "status": "accepted",
+  "message_id": 880,
+  "message": "User creation request has been queued"
+}
+###
+
+POST http://localhost:8080/users
+Content-Type: application/json
+
+{
+  "status": "accepted",
+  "message_id": 897,
+  "message": "card_id:1234,building_id: 323"
+}
+###
+

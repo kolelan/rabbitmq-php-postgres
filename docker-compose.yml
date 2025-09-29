@@ -1,0 +1,179 @@
+version: '3.8'
+
+services:
+  # База данных
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - app-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3-management
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    ports:
+      - "5672:5672"   # AMQP protocol
+      - "15672:15672" # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - app-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # PHP Worker
+  php-worker:
+    build: ./worker
+    environment:
+      - DATABASE_URL=pgsql:host=postgres;port=5432;dbname=${POSTGRES_DB};user=${POSTGRES_USER};password=${POSTGRES_PASSWORD}
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USER=${RABBITMQ_USER}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
+      - LOG_LEVEL=info
+    depends_on:
+      - postgres
+      - rabbitmq
+    networks:
+      - app-network
+    restart: unless-stopped
+    labels:
+      - "logging=promtail"
+      - "logging_job=php-worker"
+
+  # PHP API Server
+  php-api:
+    build: ./api
+    ports:
+      - "8080:8080"
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USER=${RABBITMQ_USER}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - LOG_LEVEL=info
+    depends_on:
+      - postgres
+      - rabbitmq
+    volumes:
+      - ./shared:/app/shared
+    networks:
+      - app-network
+    restart: unless-stopped
+    labels:
+      - "logging=promtail"
+      - "logging_job=php-api"
+
+  # PHP Console Application
+  php-console:
+    build: ./console
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_USER=${RABBITMQ_USER}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - LOG_LEVEL=info
+    depends_on:
+      - postgres
+      - rabbitmq
+    volumes:
+      - ./shared:/app/shared
+    stdin_open: true
+    tty: true
+    networks:
+      - app-network
+    labels:
+      - "logging=promtail"
+      - "logging_job=php-console"
+
+  # Loki для хранения логов
+  loki:
+    image: grafana/loki:2.9.0
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - loki_data:/loki
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # Promtail для сбора логов
+  promtail:
+    image: grafana/promtail:2.9.0
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./logging/promtail-config.yml:/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # Grafana для визуализации
+  grafana:
+    image: grafana/grafana:10.0.0
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./logging/grafana-datasource.yml:/etc/grafana/provisioning/datasources/loki.yml
+    depends_on:
+      - loki
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # pgAdmin для администрирования PostgreSQL
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    ports:
+      - "5050:80"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
+      - PGADMIN_CONFIG_SERVER_MODE=False
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+  loki_data:
+  grafana_data:
+  pgadmin_data:
+
+networks:
+  app-network:
+    driver: bridge
