@@ -33,11 +33,17 @@
 - Позволяет отправлять сообщения вручную
 - Введите "quit", чтобы завершить работу
 
-### PHP API
+### PHP API (Slim Framework)
 - Сервер REST API на порту 8080
+- Построен на Slim Framework 4
 - Конечные точки:
+  - `GET /` - Документация API
+  - `GET /health` - Проверка работоспособности
   - `POST /users` - Создать нового пользователя (отправляет сообщение в очередь)
-  - `GET /health` - Конечная точка проверки работоспособности
+  - `GET /users` - Список всех пользователей
+  - `POST /messages` - Создать пользовательское сообщение (отправляет в очередь)
+  - `GET /messages` - Список всех сообщений
+  - `GET /messages/{id}` - Получить сообщение по ID
 
 ### Стек мониторинга
 - **Loki**: Агрегация журналов (порт 3100)
@@ -69,13 +75,39 @@
 
 ### Используя API
 ```bash
-# Create a user
+# API документация
+curl http://localhost:8080/
+
+# Проверяем работоспособность
+curl http://localhost:8080/health
+
+# Создать пользователя
 curl -X POST http://localhost:8080/users \
   -H "Content-Type: application/json" \
   -d '{"name": "John Doe"}'
 
-# Проверяем работоспособность
-curl http://localhost:8080/health
+# Получить список пользователей
+curl http://localhost:8080/users
+
+# Создать пользовательское сообщение
+curl -X POST http://localhost:8080/messages \
+  -H "Content-Type: application/json" \
+  -d '{
+    "action": "send_email",
+    "data": {
+      "to": "user@example.com",
+      "subject": "Welcome",
+      "body": "Welcome to our service!"
+    },
+    "queue": "email_queue",
+    "priority": "high"
+  }'
+
+# Получить список сообщений
+curl http://localhost:8080/messages
+
+# Получить сообщение по ID
+curl http://localhost:8080/messages/1
 ```
 
 ### Using the Console

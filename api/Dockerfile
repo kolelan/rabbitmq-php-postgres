@@ -31,4 +31,4 @@ COPY . .
 # Регенерируем автозагрузчик после копирования shared директории
 RUN composer dump-autoload --optimize
 
-CMD ["php", "-S", "0.0.0.0:8080", "index.php"]
+CMD ["php", "-S", "0.0.0.0:8080", "app.php"]

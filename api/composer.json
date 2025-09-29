@@ -6,7 +6,9 @@
         "ext-amqp": "*",
         "vlucas/phpdotenv": "^5.5",
         "monolog/monolog": "^3.0",
-        "php-amqplib/php-amqplib": "^3.0"
+        "php-amqplib/php-amqplib": "^3.0",
+        "slim/slim": "^4.12",
+        "slim/psr7": "^1.6"
     },
     "autoload": {
         "psr-4": {

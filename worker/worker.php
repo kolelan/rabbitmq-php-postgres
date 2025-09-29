@@ -12,7 +12,6 @@ use Shared\Database\DatabaseConnection;
 use Shared\Logging\LoggerFactory;
 use PhpAmqpLib\Message\AMQPMessage;
 use Monolog\Logger;
-use RuntimeException;
 
 class DataWorker
 {
@@ -130,13 +129,13 @@ class DataWorker
             $success = $this->db->insertUser($name);
 
             if (!$success) {
-                throw new RuntimeException("Failed to add user: " . $name);
+                throw new \RuntimeException("Failed to add user: " . $name);
             }
 
             $this->logger->info('User created successfully', ['name' => $name]);
 
         } else {
-            throw new RuntimeException("Unknown action: " . $data['action']);
+            throw new \RuntimeException("Unknown action: " . $data['action']);
         }
     }
 }

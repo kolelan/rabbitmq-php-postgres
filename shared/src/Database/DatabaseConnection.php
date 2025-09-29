@@ -50,13 +50,14 @@ class DatabaseConnection
     {
         $sql = "UPDATE messages 
                 SET status = :status, 
-                    processed_at = CASE WHEN :status = 'processed' THEN NOW() ELSE NULL END,
+                    processed_at = CASE WHEN :status_check = 'processed' THEN NOW() ELSE NULL END,
                     error_message = :error_message 
                 WHERE id = :id";
 
         $stmt = $this->pdo->prepare($sql);
         return $stmt->execute([
             'status' => $status,
+            'status_check' => $status,
             'error_message' => $errorMessage,
             'id' => $messageId
         ]);
